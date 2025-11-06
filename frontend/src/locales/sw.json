@@ -1,0 +1,81 @@
+{
+  "app": {
+    "name": "FarmOracle",
+    "tagline": "Oracle ya Kilimo ya AI ya Afrika kwenye Blockchain"
+  },
+  "nav": {
+    "home": "Nyumbani",
+    "dashboard": "Dashibodi",
+    "marketplace": "Soko",
+    "nft": "NFTs",
+    "privacy": "Faragha",
+    "sms": "Arifa za SMS",
+    "about": "Kuhusu"
+  },
+  "dashboard": {
+    "title": "Dashibodi ya Kilimo Mahiri",
+    "subtitle": "Maarifa ya AI kwa shamba lako",
+    "marketPrediction": "Utabiri wa Soko",
+    "diseaseDetection": "Ugunduzi wa Magonjwa ya Mimea",
+    "weatherForecast": "Utabiri wa Hali ya Hewa",
+    "soilAnalysis": "Ugunduzi wa Udongo",
+    "storage": "Hifadhi",
+    "marketplace": "Soko"
+  },
+  "nft": {
+    "title": "Mfumo wa NFT wa FarmOracle",
+    "subtitle": "Kiwango cha ERC-1155 Multi-Token",
+    "mint": "Tengeneza NFTs",
+    "myNfts": "NFTs Zangu",
+    "staking": "Kuweka",
+    "healthyCrop": "NFT ya Mazao Yenye Afya",
+    "diseaseFreeCert": "Cheti cha Bila Magonjwa",
+    "soilHealth": "NFT ya Afya ya Udongo",
+    "tokenizeYield": "Badilisha Mavuno kuwa Tokeni",
+    "stakingRewards": "Weka na Pata (12-18% APY)"
+  },
+  "privacy": {
+    "title": "Safu ya Faragha ya FarmOracle",
+    "subtitle": "Uthibitisho wa Zero-Knowledge na Itifaki ya Semaphore",
+    "createIdentity": "Unda Utambulisho Usio na Jina",
+    "registerOnChain": "Sajili kwenye Blockchain",
+    "anonymousActions": "Fanya Vitendo Visivyo na Jina",
+    "privacyGroups": "Vikundi vya Faragha"
+  },
+  "sms": {
+    "title": "Arifa za SMS za FarmOracle",
+    "subtitle": "Arifa kwa Wakulima Wenye Muunganisho Mdogo",
+    "sendSms": "Tuma SMS",
+    "farmingAlerts": "Arifa za Kilimo",
+    "history": "Historia",
+    "diseaseAlert": "Arifa ya Ugonjwa",
+    "priceAlert": "Arifa ya Bei",
+    "weatherAlert": "Arifa ya Hali ya Hewa"
+  },
+  "alerts": {
+    "diseaseDetected": "Ugonjwa umegunduliwa katika {crop} yako!",
+    "harvestSoon": "{crop} yako iko tayari kuvunwa katika siku {days}",
+    "priceIncrease": "Ongezeko la bei linatabirika kwa {crop}",
+    "weatherWarning": "Arifa ya hali ya hewa: {condition}",
+    "nftMinted": "Mazao yako yamebadilishwa kuwa tokeni!"
+  },
+  "actions": {
+    "connect": "Unganisha Mkoba",
+    "disconnect": "Tenganisha",
+    "mint": "Tengeneza",
+    "stake": "Weka",
+    "unstake": "Ondoa",
+    "claim": "Dai Tuzo",
+    "send": "Tuma",
+    "cancel": "Ghairi",
+    "confirm": "Thibitisha"
+  },
+  "stats": {
+    "totalNfts": "Jumla ya NFTs Zilizotengenezwa",
+    "totalFarmers": "Jumla ya Wakulima",
+    "totalStakers": "Jumla ya Wawekaji",
+    "pendingRewards": "Tuzo Zako Zinazosubiri",
+    "successRate": "Kiwango cha Mafanikio",
+    "totalSent": "Jumla ya SMS Zilizotumwa"
+  }
+}

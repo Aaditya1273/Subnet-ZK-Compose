@@ -1,0 +1,81 @@
+{
+  "app": {
+    "name": "FarmOracle",
+    "tagline": "Africa's Autonomous AI Farming Oracle on the Blockchain"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "marketplace": "Marketplace",
+    "nft": "NFTs",
+    "privacy": "Privacy",
+    "sms": "SMS Alerts",
+    "about": "About"
+  },
+  "dashboard": {
+    "title": "Smart Farming Dashboard",
+    "subtitle": "AI-driven insights for your farm",
+    "marketPrediction": "Market Prediction",
+    "diseaseDetection": "Plant Disease Detection",
+    "weatherForecast": "Weather Prediction",
+    "soilAnalysis": "Soil Detection",
+    "storage": "Storage",
+    "marketplace": "Marketplace"
+  },
+  "nft": {
+    "title": "FarmOracle NFT System",
+    "subtitle": "ERC-1155 Multi-Token Standard",
+    "mint": "Mint NFTs",
+    "myNfts": "My NFTs",
+    "staking": "Staking",
+    "healthyCrop": "Healthy Crop NFT",
+    "diseaseFreeCert": "Disease-Free Certificate",
+    "soilHealth": "Soil Health NFT",
+    "tokenizeYield": "Tokenize Yield",
+    "stakingRewards": "Stake & Earn (12-18% APY)"
+  },
+  "privacy": {
+    "title": "FarmOracle Privacy Layer",
+    "subtitle": "Zero-Knowledge Proofs with Semaphore Protocol",
+    "createIdentity": "Create Anonymous Identity",
+    "registerOnChain": "Register On-Chain",
+    "anonymousActions": "Perform Anonymous Actions",
+    "privacyGroups": "Privacy Groups"
+  },
+  "sms": {
+    "title": "FarmOracle SMS Alerts",
+    "subtitle": "Low-Connectivity Farmer Notifications",
+    "sendSms": "Send SMS",
+    "farmingAlerts": "Farming Alerts",
+    "history": "History",
+    "diseaseAlert": "Disease Alert",
+    "priceAlert": "Price Alert",
+    "weatherAlert": "Weather Alert"
+  },
+  "alerts": {
+    "diseaseDetected": "Disease detected in your {crop}!",
+    "harvestSoon": "Your {crop} is ready for harvest in {days} days",
+    "priceIncrease": "Price increase predicted for {crop}",
+    "weatherWarning": "Weather alert: {condition}",
+    "nftMinted": "Your crop has been tokenized!"
+  },
+  "actions": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "mint": "Mint",
+    "stake": "Stake",
+    "unstake": "Unstake",
+    "claim": "Claim Rewards",
+    "send": "Send",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "stats": {
+    "totalNfts": "Total NFTs Minted",
+    "totalFarmers": "Total Farmers",
+    "totalStakers": "Total Stakers",
+    "pendingRewards": "Your Pending Rewards",
+    "successRate": "Success Rate",
+    "totalSent": "Total SMS Sent"
+  }
+}
