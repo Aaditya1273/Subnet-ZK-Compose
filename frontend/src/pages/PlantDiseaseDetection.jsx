@@ -12,6 +12,10 @@ const PlantDiseaseDetection = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isValidPlantImage, setIsValidPlantImage] = useState(true);
+  const [validationMessage, setValidationMessage] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
   const [diseases, setDiseases] = useState([
     { name: "Late Blight", count: 12 },
     { name: "Early Blight", count: 8 },
@@ -35,12 +39,59 @@ const PlantDiseaseDetection = () => {
     };
   }, []);
 
-  const handleFileChange = (event) => {
+  const validatePlantImage = async (file) => {
+    setIsValidating(true);
+    setValidationMessage("");
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const response = await axios.post(
+        ENDPOINTS.VALIDATE_PLANT_IMAGE,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      
+      // Check if validation service returned an error
+      if (response.data.status === "error") {
+        console.warn("Validation service error:", response.data.message);
+        // If Gemini fails, reject the image (safer approach)
+        setIsValidPlantImage(false);
+        setValidationMessage("⚠️ Image validation failed. Please try again or upload a clear plant image.");
+        return false;
+      }
+      
+      const isPlant = response.data.is_plant;
+      setIsValidPlantImage(isPlant);
+      
+      if (!isPlant) {
+        setValidationMessage("⚠️ Please upload only plant, crop, vegetable, or fruit images");
+      } else {
+        setValidationMessage("");
+      }
+      
+      return isPlant;
+    } catch (error) {
+      console.error("Validation request failed:", error);
+      // If backend is completely down, reject to be safe
+      setIsValidPlantImage(false);
+      setValidationMessage("⚠️ Validation service unavailable. Please try again later.");
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
       setDetectionResult("");
+      
+      // Validate if it's a plant image
+      await validatePlantImage(file);
     }
   };
 
@@ -173,10 +224,13 @@ const PlantDiseaseDetection = () => {
     
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async (blob) => {
       const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(blob));
+      
+      // Validate captured image
+      await validatePlantImage(file);
       
       closeCamera();
     }, 'image/jpeg', 0.95);
@@ -205,7 +259,13 @@ const PlantDiseaseDetection = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      console.log("Detection result:", response.data);
       setDetectionResult(response.data);
+      
+      // Show modal if analysis was successful
+      if (response.data?.status === "success" || response.data?.prediction) {
+        setShowReportModal(true);
+      }
     } catch (error) {
       setDetectionResult({ error: "Error analyzing image" });
     } finally {
@@ -288,6 +348,31 @@ const PlantDiseaseDetection = () => {
               )}
             </div>
             
+            {/* Validation Message */}
+            {validationMessage && (
+              <div className="w-full mb-4 bg-red-50 border-2 border-red-400 rounded-lg p-4 animate-fadeIn">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <p className="font-bold text-red-800 mb-1">Invalid Image</p>
+                    <p className="text-red-700 text-sm">{validationMessage}</p>
+                    <p className="text-red-600 text-xs mt-2">Please upload a clear photo of plant leaves, stems, or fruits showing any disease symptoms.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {isValidating && (
+              <div className="w-full mb-4 bg-blue-50 border-2 border-blue-400 rounded-lg p-4 animate-pulse">
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+                  <p className="text-blue-800 font-medium">Validating image...</p>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-3 gap-4 w-full">
               <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} ref={fileInputRef} />
               
@@ -337,18 +422,19 @@ const PlantDiseaseDetection = () => {
                   
                   <button
                     onClick={analyzeImage}
-                    disabled={!selectedImage || isAnalyzing}
+                    disabled={!selectedImage || isAnalyzing || !isValidPlantImage || isValidating}
                     className={`col-span-1 py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 font-medium shadow-md ${
-                      !selectedImage || isAnalyzing
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      !selectedImage || isAnalyzing || !isValidPlantImage || isValidating
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
                         : "bg-black text-white hover:bg-gray-800 hover:shadow-lg"
                     }`}
+                    title={!isValidPlantImage ? "Please upload a plant image" : ""}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M6.625 2.655A9 9 0 0119 11a1 1 0 11-2 0 7 7 0 00-9.625-6.492 1 1 0 11-.75-1.853zM4.662 4.959A1 1 0 014.75 6.37 6.97 6.97 0 003 11a1 1 0 11-2 0 8.97 8.97 0 012.25-5.953 1 1 0 011.412-.088z" clipRule="evenodd" />
                       <path fillRule="evenodd" d="M5 11a5 5 0 1110 0 1 1 0 11-2 0 3 3 0 10-6 0c0 1.677-.345 3.276-.968 4.729a1 1 0 11-1.838-.789A9.964 9.964 0 005 11z" clipRule="evenodd" />
                     </svg>
-                    Analyze
+                    {isValidating ? "Validating..." : "Analyze"}
                   </button>
                 </>
               )}
@@ -391,6 +477,21 @@ const PlantDiseaseDetection = () => {
                       <div className="mt-4 bg-black bg-opacity-30 p-3 rounded-lg">
                         <p className="text-gray-400 text-sm mb-1">Recommended Treatment:</p>
                         <p>{detectionResult.treatment}</p>
+                      </div>
+                    )}
+                    
+                    {/* User-Friendly Report from Gemini */}
+                    {detectionResult.prediction?.user_friendly_report && (
+                      <div className="mt-6 bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl border-2 border-green-200 shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <svg className="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <h4 className="text-2xl font-bold text-gray-900">📋 Detailed Analysis Report</h4>
+                        </div>
+                        <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-line leading-relaxed">
+                          {detectionResult.prediction.user_friendly_report}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -462,6 +563,137 @@ const PlantDiseaseDetection = () => {
         </div>
       </div>
       
+      {/* Report Modal Popup */}
+      {showReportModal && detectionResult && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden transform transition-all animate-slideUp">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-10 h-10 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div>
+                    <h2 className="text-2xl font-bold">Analysis Report</h2>
+                    <p className="text-green-100 text-sm">AI-Powered Diagnosis & Treatment Plan</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                  <p className="text-gray-600 text-sm font-semibold mb-1">Disease Detected</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {detectionResult.prediction?.disease || detectionResult.class || "Unknown"}
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                  <p className="text-gray-600 text-sm font-semibold mb-1">Confidence Level</p>
+                  <p className="text-xl font-bold text-gray-900">{(detectionResult.confidence * 100).toFixed(1)}%</p>
+                </div>
+              </div>
+              
+              {/* Detailed Report */}
+              <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-200 shadow-inner">
+                {detectionResult.prediction?.user_friendly_report ? (
+                  <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-line leading-relaxed">
+                    {detectionResult.prediction.user_friendly_report}
+                  </div>
+                ) : (
+                  <div className="text-gray-900">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold mb-3 border-b-2 border-gray-300 pb-2">
+                        What We Found
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed">
+                        Our AI has identified <strong className="text-black">{detectionResult.prediction?.disease || detectionResult.class || "a disease"}</strong> affecting your plant with <strong className="text-black">{(detectionResult.confidence * 100).toFixed(1)}%</strong> confidence.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-100 border-l-4 border-gray-600 p-4 mb-6">
+                      <p className="text-sm text-gray-800">
+                        <strong>Important:</strong> Detailed treatment recommendations are being generated by our AI. For immediate action, please consult with a local agricultural expert or extension service.
+                      </p>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <h4 className="text-lg font-bold mb-3 border-b-2 border-gray-300 pb-2">
+                        Immediate Actions
+                      </h4>
+                      <ul className="space-y-3">
+                        <li className="flex items-start">
+                          <span className="text-black font-bold mr-3 min-w-[24px]">1.</span>
+                          <span className="text-gray-700">Remove and destroy affected plant parts immediately to prevent spread</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-black font-bold mr-3 min-w-[24px]">2.</span>
+                          <span className="text-gray-700">Isolate infected plants from healthy ones</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-black font-bold mr-3 min-w-[24px]">3.</span>
+                          <span className="text-gray-700">Improve air circulation around plants</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-black font-bold mr-3 min-w-[24px]">4.</span>
+                          <span className="text-gray-700">Avoid overhead watering - water at soil level</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-black font-bold mr-3 min-w-[24px]">5.</span>
+                          <span className="text-gray-700">Contact local agricultural extension services for specific treatment</span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
+                      <p className="text-sm text-gray-800">
+                        <strong>Need Help?</strong> Visit your local agricultural office or contact farming experts in your area for personalized treatment plans.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(detectionResult.prediction.user_friendly_report);
+                    alert('Report copied to clipboard!');
+                  }}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 flex items-center justify-center shadow-lg"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Report
+                </button>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 flex items-center justify-center shadow-lg"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Got It!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes float {
@@ -473,6 +705,15 @@ const PlantDiseaseDetection = () => {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(50px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
         }
         
         .animate-fadeIn {

@@ -72,7 +72,18 @@ function SoilPredictor() {
           care: []
         });
       } else {
-        setResult(res.data);
+        // Transform backend response to frontend format
+        const prediction = res.data.prediction || {};
+        setResult({
+          prediction: prediction.soil_type || "Unknown",
+          confidence: (res.data.confidence * 100) || 0,
+          crops: prediction.recommended_crops || [],
+          care: prediction.care_instructions || [],
+          notes: prediction.notes || "",
+          ph_range: prediction.ph_range || "N/A",
+          texture: prediction.texture || "N/A",
+          water_retention: prediction.water_retention || "N/A"
+        });
       }
       
       setAnimateResult(true);
@@ -209,44 +220,43 @@ function SoilPredictor() {
 
           {/* Results section */}
           {result && (
-            <div className={`mt-8 border ${result.error ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'} rounded-xl p-6 transition-all duration-500 ${animateResult ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
+            <div className={`mt-8 border-2 ${result.error ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-white'} rounded-lg p-6 transition-all duration-500 ${animateResult ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
               <div className="flex items-center justify-between">
-                <h3 className={`text-2xl font-bold ${result.error ? 'text-red-600' : 'text-smart-green'}`}>
+                <h3 className={`text-2xl font-bold ${result.error ? 'text-gray-700' : 'text-black'}`}>
                   {result.error ? 'Analysis Error' : 'Analysis Results'}
                 </h3>
                 {!result.error && (
-                  <div className="bg-smart-yellow text-smart-green px-3 py-1 rounded-full font-medium animate-pulse">
+                  <div className="bg-gray-200 text-black px-4 py-2 rounded font-semibold border-2 border-gray-400">
                     {typeof result.confidence === 'number'
                       ? result.confidence.toFixed(0) + '% Confidence'
                       : result.confidence}
                   </div>
                 )}
                 {result.error && (
-                  <div className="bg-red-500 text-white px-3 py-1 rounded-full font-medium">
+                  <div className="bg-gray-700 text-white px-4 py-2 rounded font-semibold">
                     Service Issue
                   </div>
                 )}
               </div>
 
-              <div className={`mt-4 p-4 ${result.error ? 'bg-red-100 border border-red-200' : 'bg-white'} rounded-lg shadow-inner`}>
+              <div className={`mt-4 p-4 ${result.error ? 'bg-gray-100 border-2 border-gray-300' : 'bg-gray-50 border-2 border-gray-200'} rounded-lg`}>
                 <h3 className="text-xl font-bold flex items-center">
-                  <span className="text-2xl mr-2">{result.error ? '⚠️' : '🧪'}</span> 
                   {result.error ? 'Status:' : 'Predicted:'} 
-                  <span className={`ml-2 ${result.error ? 'text-red-600' : 'text-smart-green'}`}>
+                  <span className={`ml-2 ${result.error ? 'text-gray-700' : 'text-black'}`}>
                     {result.prediction}
                   </span>
                 </h3>
                 {result.error && result.message && (
-                  <p className="mt-2 text-red-600 text-sm">{result.message}</p>
+                  <p className="mt-2 text-gray-600 text-sm">{result.message}</p>
                 )}
               </div>
 
               {result.notes && (
-                <div className={`mt-4 p-4 ${result.error ? 'bg-red-100 border border-red-200' : 'bg-white'} rounded-lg shadow-inner transition-all duration-300 hover:shadow-md`}>
-                  <h4 className={`font-bold ${result.error ? 'text-red-700' : 'text-gray-700'}`}>
+                <div className={`mt-4 p-4 ${result.error ? 'bg-gray-100 border-2 border-gray-300' : 'bg-white border-2 border-gray-200'} rounded-lg`}>
+                  <h4 className={`font-bold ${result.error ? 'text-gray-800' : 'text-black'}`}>
                     {result.error ? 'What happened:' : 'About this soil:'}
                   </h4>
-                  <p className={`mt-2 ${result.error ? 'text-red-600' : 'text-gray-600'}`}>{result.notes}</p>
+                  <p className={`mt-2 ${result.error ? 'text-gray-700' : 'text-gray-600'}`}>{result.notes}</p>
                   {result.error && (
                     <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
                       <h5 className="font-semibold text-yellow-800">💡 What's happening?</h5>
@@ -269,21 +279,50 @@ function SoilPredictor() {
               )}
 
               {!result.error && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {result.crops && result.crops.length > 0 && (
-                    <div className="p-4 bg-white rounded-lg shadow transition-all duration-300 hover:shadow-md">
-                      <h4 className="font-bold text-gray-700 flex items-center">
-                        <span className="text-xl mr-2">✅</span> 
+                <>
+                  {/* Soil Characteristics */}
+                  {(result.ph_range || result.texture || result.water_retention) && (
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
+                      <h4 className="font-bold text-black flex items-center mb-4">
+                        Soil Characteristics
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {result.ph_range && result.ph_range !== "N/A" && (
+                          <div className="bg-white p-3 rounded-lg border-2 border-gray-200">
+                            <p className="text-xs text-gray-500 font-semibold uppercase">pH Range</p>
+                            <p className="text-lg font-bold text-black mt-1">{result.ph_range}</p>
+                          </div>
+                        )}
+                        {result.texture && result.texture !== "N/A" && (
+                          <div className="bg-white p-3 rounded-lg border-2 border-gray-200">
+                            <p className="text-xs text-gray-500 font-semibold uppercase">Texture</p>
+                            <p className="text-lg font-bold text-black mt-1">{result.texture}</p>
+                          </div>
+                        )}
+                        {result.water_retention && result.water_retention !== "N/A" && (
+                          <div className="bg-white p-3 rounded-lg border-2 border-gray-200">
+                            <p className="text-xs text-gray-500 font-semibold uppercase">Water Retention</p>
+                            <p className="text-lg font-bold text-black mt-1">{result.water_retention}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    {result.crops && result.crops.length > 0 && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-gray-300">
+                      <h4 className="font-bold text-black flex items-center border-b-2 border-gray-200 pb-2 mb-3">
                         Suitable Crops
                       </h4>
                       <ul className="mt-3 space-y-2">
                         {result.crops.map((crop, index) => (
                           <li 
                             key={crop} 
-                            className="flex items-center text-gray-600 transition-all duration-300"
+                            className="flex items-center text-gray-700"
                             style={{ animationDelay: `${index * 100}ms` }}
                           >
-                            <span className="mr-2 text-green-500">•</span> {crop}
+                            <span className="mr-2 text-black font-bold">•</span> {crop}
                           </li>
                         ))}
                       </ul>
@@ -291,25 +330,25 @@ function SoilPredictor() {
                   )}
 
                   {result.care && result.care.length > 0 && (
-                    <div className="p-4 bg-white rounded-lg shadow transition-all duration-300 hover:shadow-md">
-                      <h4 className="font-bold text-gray-700 flex items-center">
-                        <span className="text-xl mr-2">🛠️</span> 
+                    <div className="p-4 bg-white rounded-lg border-2 border-gray-300">
+                      <h4 className="font-bold text-black flex items-center border-b-2 border-gray-200 pb-2 mb-3">
                         Care Tips
                       </h4>
                       <ul className="mt-3 space-y-2">
                         {result.care.map((tip, index) => (
                           <li 
                             key={tip} 
-                            className="flex items-center text-gray-600 transition-all duration-300"
+                            className="flex items-center text-gray-700"
                             style={{ animationDelay: `${index * 100}ms` }}
                           >
-                            <span className="mr-2 text-smart-yellow">•</span> {tip}
+                            <span className="mr-2 text-black font-bold">•</span> {tip}
                           </li>
                         ))}
                       </ul>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}

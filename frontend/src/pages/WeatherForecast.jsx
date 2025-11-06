@@ -1,45 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Cloud, Sun, Sunrise, Sunset, Moon, Wind, Droplets, ThermometerSun, Umbrella, CloudRain, CloudLightning, CloudSnow } from 'lucide-react';
-
-// Generate dynamic weather data for next 7 days
-const generateWeatherData = () => {
-  const data = [];
-  const today = new Date();
-  const conditions = [
-    { type: 'sunny', label: 'Clear Sky' },
-    { type: 'partly-cloudy', label: 'Partly Cloudy' },
-    { type: 'cloudy', label: 'Cloudy' },
-    { type: 'mostly-sunny', label: 'Mostly Sunny' }
-  ];
-  
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const baseTemp = 15 + Math.random() * 8; // 15-23°C range
-    
-    data.push({
-      date: date.toISOString().split('T')[0],
-      temperature: parseFloat(baseTemp.toFixed(1)),
-      details: {
-        morning: `${(baseTemp - 2).toFixed(1)}°C`,
-        afternoon: `${(baseTemp + 2).toFixed(1)}°C`,
-        evening: `${(baseTemp - 0.5).toFixed(1)}°C`,
-        night: `${(baseTemp - 3).toFixed(1)}°C`
-      },
-      humidity: `${Math.floor(60 + Math.random() * 20)}%`,
-      wind: `${Math.floor(8 + Math.random() * 8)} km/h`,
-      precipitation: `${Math.floor(Math.random() * 30)}%`,
-      description: i === 0 ? 'Current weather conditions with moderate temperatures.' : `Forecast for ${date.toLocaleDateString('en-US', { weekday: 'long' })}.`,
-      condition: conditions[Math.floor(Math.random() * conditions.length)].type,
-      conditionLabel: conditions[Math.floor(Math.random() * conditions.length)].label
-    });
-  }
-  return data;
-};
-
-const weatherData = generateWeatherData();
+import { Cloud, Sun, Sunrise, Sunset, Moon, Wind, Droplets, ThermometerSun, Umbrella, CloudRain, CloudLightning, CloudSnow, MapPin } from 'lucide-react';
+import axios from 'axios';
+import { ENDPOINTS } from '../config/api';
 
 const staticWeatherData = [
   {
@@ -150,23 +114,67 @@ const staticWeatherData = [
 ];
 
 const WeatherForecast = () => {
-  const [selectedDay, setSelectedDay] = useState(0); // Default to today (first day)
+  const [selectedDay, setSelectedDay] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [animateCloud, setAnimateCloud] = useState(false);
+  const [weatherData, setWeatherData] = useState([]);
+  const [location, setLocation] = useState("auto:ip");
+  const [locationInput, setLocationInput] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [locationInfo, setLocationInfo] = useState(null);
+  const [currentWeather, setCurrentWeather] = useState(null);
   const [animationFrame, setAnimationFrame] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [mounted, setMounted] = useState(false);
-  const [weatherDataState, setWeatherDataState] = useState(weatherData);
+  const [weatherDataState, setWeatherDataState] = useState([{
+    date: new Date().toISOString().split('T')[0],
+    temperature: 20,
+    condition: 'sunny',
+    conditionLabel: 'Clear Sky',
+    humidity: '60%',
+    wind_kph: 10,
+    chance_of_rain: 0,
+    details: { morning: '18°C', afternoon: '22°C', evening: '20°C', night: '17°C' }
+  }]);
 
   const formatDate = (dateString) => {
     const options = { weekday: 'long', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  // Fetch real weather data
+  const fetchWeather = async (loc) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('Fetching weather from:', `${ENDPOINTS.WEATHER_FORECAST}?location=${encodeURIComponent(loc)}`);
+      const response = await axios.get(`${ENDPOINTS.WEATHER_FORECAST}?location=${encodeURIComponent(loc)}`);
+      console.log('Weather response:', response.data);
+      
+      if (response.data.status === 'success') {
+        console.log('Weather forecast data:', response.data.forecast);
+        setWeatherDataState(response.data.forecast);
+        setLocationInfo(response.data.location);
+        setCurrentWeather(response.data.current);
+      } else {
+        throw new Error('Invalid response status');
+      }
+    } catch (err) {
+      console.error('Weather fetch error:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError(`Failed to fetch weather data: ${err.response?.data?.detail || err.message}`);
+      // Use static fallback data
+      console.log('Using static fallback data');
+      setWeatherDataState(staticWeatherData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
-    // Generate fresh weather data on client side only
-    setWeatherDataState(generateWeatherData());
+    fetchWeather(location);
     
     const interval = setInterval(() => {
       setCurrentTime(new Date());
@@ -176,7 +184,23 @@ const WeatherForecast = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const today = weatherDataState[0]; // Today is the first item (index 0) 
+  const handleLocationChange = () => {
+    if (locationInput.trim()) {
+      setLocation(locationInput);
+      fetchWeather(locationInput);
+    }
+  };
+
+  const today = (weatherDataState && weatherDataState[0]) || {
+    date: new Date().toISOString().split('T')[0],
+    temperature: 20,
+    condition: 'sunny',
+    conditionLabel: 'Clear Sky',
+    humidity: '60%',
+    wind: '10 km/h',
+    precipitation: '0%',
+    details: { morning: '18°C', afternoon: '22°C', evening: '20°C', night: '17°C' }
+  }; // Today is the first item (index 0) with fallback 
 
   const getWeatherIcon = (condition, size = 24, animate = false) => {
     const props = { 
@@ -259,6 +283,18 @@ const WeatherForecast = () => {
         </div>
 
       
+        {isLoading ? (
+          <div className="bg-white shadow-lg p-12 mb-6 rounded-lg text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-smart-green mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading weather data...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border-2 border-red-200 shadow-lg p-6 mb-6 rounded-lg">
+            <p className="text-red-600 font-semibold">⚠️ {error}</p>
+            <p className="text-sm text-gray-600 mt-2">Showing fallback data. Please check your internet connection.</p>
+          </div>
+        ) : null}
+
         <div className="bg-white shadow-lg p-6 mb-6 rounded-lg relative overflow-hidden transform transition-all duration-300 hover:scale-101 hover:shadow-xl">
           
           <div className="absolute inset-0 bg-gradient-to-br from-smart-yellow/5 to-smart-green/5 opacity-50"></div>
@@ -273,7 +309,7 @@ const WeatherForecast = () => {
           <div className="flex flex-col md:flex-row justify-between items-center md:items-start relative z-10">
             <div className="mb-4 md:mb-0">
               <div className="inline-flex items-center px-3 py-1 mb-3 rounded-full bg-smart-green text-white text-sm animate-bounce-slow">
-                <span className="mr-1">●</span> Live Weather
+                <span className="mr-1">●</span> {locationInfo ? `${locationInfo.name}, ${locationInfo.country}` : 'Live Weather'}
               </div>
               <h2 className="text-xl font-bold text-gray-800">Today - {formatDate(today.date)}</h2>
               <div className="flex items-center mt-2">
@@ -356,7 +392,7 @@ const WeatherForecast = () => {
           
           <div className="overflow-x-auto px-6">
             <div className="flex py-6 gap-6">
-              {weatherDataState.map((day, index) => (
+              {(weatherDataState || []).map((day, index) => (
                 <div 
                   key={index}
                   className={`min-w-[140px] border-2 rounded-lg cursor-pointer transition-all duration-300 ${
@@ -403,19 +439,19 @@ const WeatherForecast = () => {
             </div>
           </div>
           
-          {selectedDay !== null && (
+          {selectedDay !== null && weatherDataState && weatherDataState[selectedDay] && (
             <div className="border-t border-gray-200 animate-fadeIn">
               <div className="bg-gradient-to-br from-white to-gray-50 p-5 relative overflow-hidden">
                 <div className={`absolute top-0 right-0 w-32 h-32 opacity-5 transition-all duration-2000 ${animateCloud ? 'translate-x-4' : 'translate-x-0'}`}>
-                  {getWeatherIcon(weatherDataState[selectedDay].condition, 128)}
+                  {getWeatherIcon(weatherDataState[selectedDay]?.condition || 'sunny', 128)}
                 </div>
                 
-                <h3 className="font-bold text-smart-green text-xl mb-1">{formatDate(weatherDataState[selectedDay].date)}</h3>
+                <h3 className="font-bold text-smart-green text-xl mb-1">{formatDate(weatherDataState[selectedDay]?.date || new Date().toISOString())}</h3>
                 <div className="flex items-center mb-4">
                   <div className="mr-2">
-                    {getWeatherIcon(weatherDataState[selectedDay].condition, 24, true)}
+                    {getWeatherIcon(weatherDataState[selectedDay]?.condition || 'sunny', 24, true)}
                   </div>
-                  <p className="text-gray-600">{weatherDataState[selectedDay].description}</p>
+                  <p className="text-gray-600">{weatherDataState[selectedDay]?.description || 'Loading...'}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -424,28 +460,28 @@ const WeatherForecast = () => {
                       <Sunrise className="text-smart-yellow mr-2" size={18} />
                       <p className="text-xs text-gray-500">Morning</p>
                     </div>
-                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay].details.morning}</p>
+                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay]?.details?.morning || 'N/A'}</p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:bg-smart-yellow/5">
                     <div className="flex items-center mb-2">
                       <Sun className="text-smart-yellow mr-2" size={18} />
                       <p className="text-xs text-gray-500">Afternoon</p>
                     </div>
-                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay].details.afternoon}</p>
+                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay]?.details?.afternoon || 'N/A'}</p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:bg-smart-yellow/5">
                     <div className="flex items-center mb-2">
                       <Sunset className="text-smart-yellow mr-2" size={18} />
                       <p className="text-xs text-gray-500">Evening</p>
                     </div>
-                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay].details.evening}</p>
+                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay]?.details?.evening || 'N/A'}</p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:bg-smart-yellow/5">
                     <div className="flex items-center mb-2">
                       <Moon className="text-smart-yellow mr-2" size={18} />
                       <p className="text-xs text-gray-500">Night</p>
                     </div>
-                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay].details.night}</p>
+                    <p className="font-bold text-smart-green">{weatherDataState[selectedDay]?.details?.night || 'N/A'}</p>
                   </div>
                 </div>
                 
@@ -454,21 +490,21 @@ const WeatherForecast = () => {
                     <Droplets className="text-blue-500 mr-2" size={18} />
                     <div>
                       <p className="text-xs text-gray-500">Humidity</p>
-                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay].humidity}</p>
+                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay]?.humidity || 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg flex items-center transform transition-all duration-300 hover:bg-gray-100">
-                    <Wind className="text-gray-500 mr-2" size={18} />
+                  <div className="bg-green-50 bg-opacity-40 p-3 rounded-lg flex items-center transform transition-all duration-300 hover:bg-green-50">
+                    <Wind className="text-green-600 mr-2" size={18} />
                     <div>
-                      <p className="text-xs text-gray-500">Wind Speed</p>
-                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay].wind}</p>
+                      <p className="text-xs text-gray-500">Wind</p>
+                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay]?.wind_kph ? `${weatherDataState[selectedDay].wind_kph} km/h` : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="bg-blue-50 bg-opacity-30 p-3 rounded-lg flex items-center transform transition-all duration-300 hover:bg-blue-50">
-                    <Umbrella className="text-gray-500 mr-2" size={18} />
+                  <div className="bg-purple-50 bg-opacity-40 p-3 rounded-lg flex items-center transform transition-all duration-300 hover:bg-purple-50">
+                    <Umbrella className="text-purple-500 mr-2" size={18} />
                     <div>
                       <p className="text-xs text-gray-500">Precipitation</p>
-                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay].precipitation}</p>
+                      <p className="font-medium text-gray-700">{weatherDataState[selectedDay]?.chance_of_rain ? `${weatherDataState[selectedDay].chance_of_rain}%` : 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -476,7 +512,7 @@ const WeatherForecast = () => {
                 <div className="mt-5 p-3 bg-smart-green bg-opacity-5 rounded-lg border-l-2 border-smart-yellow">
                   <h4 className="text-sm font-medium text-smart-green mb-1">Weather Advisory</h4>
                   <p className="text-sm text-gray-600">
-                    {weatherDataState[selectedDay].precipitation.replace('%', '') > 20 
+                    {(weatherDataState[selectedDay]?.chance_of_rain || 0) > 20 
                       ? "Light rain possible. Consider bringing an umbrella." 
                       : "No weather warnings. Enjoy your day!"}
                   </p>

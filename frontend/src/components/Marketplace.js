@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { listCrop, buyCrop, getCrop } from "./marketplaceWeb3";
+import { listCrop, buyCrop, getCrop, getMyListings, getMyPurchases, getAllAvailableCrops, connectWallet } from "./marketplaceWeb3";
 import { 
   animate, 
   AnimatePresence, 
@@ -16,6 +16,10 @@ const Marketplace = () => {
   const [section, setSection] = useState("list"); 
   const [showListSuccess, setShowListSuccess] = useState(false);
   const [showBuySuccess, setShowBuySuccess] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [myListings, setMyListings] = useState([]);
+  const [myPurchases, setMyPurchases] = useState([]);
+  const [availableCrops, setAvailableCrops] = useState([]);
 
   const handleListCrop = async () => {
     console.log("🔹 Listing Crop: ", name, quantity, price);
@@ -25,10 +29,22 @@ const Marketplace = () => {
       return;
     }
 
+    // Connect wallet for blockchain listing
+    if (!walletAddress) {
+      try {
+        await handleConnectWallet();
+      } catch (error) {
+        alert("❌ Please connect your wallet to list crops on blockchain!");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      // List on blockchain
       await listCrop(name, Number(quantity), Number(price));
       setLoading(false);
+      
       // Reset fields
       setName("");
       setQuantity("");
@@ -38,6 +54,12 @@ const Marketplace = () => {
       setTimeout(() => {
         setShowListSuccess(false);
       }, 3000);
+      
+      // Reload profile data and available crops
+      loadProfileData();
+      loadAvailableCrops();
+      
+      console.log("✅ Crop listed on blockchain!");
     } catch (error) {
       console.error("❌ Error listing crop:", error);
       alert("❌ Listing Failed: " + error.message);
@@ -46,6 +68,16 @@ const Marketplace = () => {
   };
 
   const handleBuyCrop = async () => {
+    // Connect wallet if not connected
+    if (!walletAddress) {
+      try {
+        await handleConnectWallet();
+      } catch (error) {
+        alert("❌ Please connect your wallet to buy crops!");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await buyCrop(cropId, cropDetails[4]);
@@ -57,6 +89,10 @@ const Marketplace = () => {
       setTimeout(() => {
         setShowBuySuccess(false);
       }, 3000);
+      
+      // Reload profile data and available crops
+      loadProfileData();
+      loadAvailableCrops();
     } catch (error) {
       console.error("❌ Error purchasing crop:", error);
       alert("❌ Purchase Failed: " + error.message);
@@ -109,7 +145,96 @@ const Marketplace = () => {
     if (currentSection) {
       animateIn(currentSection);
     }
+    
+    // Load available crops when buy section is opened
+    if (section === "buy") {
+      loadAvailableCrops();
+    }
+    
+    // Load profile data when profile section is opened
+    if (section === "profile" && walletAddress) {
+      loadProfileData();
+      loadAvailableCrops();
+    }
   }, [section]);
+
+  // Removed auto-connect on mount - wallet connects when user takes action
+
+  const handleConnectWallet = async () => {
+    try {
+      const address = await connectWallet();
+      setWalletAddress(address);
+      loadProfileData();
+      loadAvailableCrops();
+    } catch (error) {
+      console.error("Wallet connection failed:", error);
+    }
+  };
+
+  const loadProfileData = async () => {
+    try {
+      const listings = await getMyListings();
+      const purchases = await getMyPurchases();
+      
+      const listingsDetails = await Promise.all(
+        listings.map(async (id) => {
+          const crop = await getCrop(id);
+          return { id, ...crop };
+        })
+      );
+      
+      const purchasesDetails = await Promise.all(
+        purchases.map(async (id) => {
+          const crop = await getCrop(id);
+          return { id, ...crop };
+        })
+      );
+      
+      setMyListings(listingsDetails);
+      setMyPurchases(purchasesDetails);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    }
+  };
+
+  const loadAvailableCrops = async () => {
+    setLoading(true);
+    try {
+      console.log("📦 Loading available crops...");
+      const cropIds = await getAllAvailableCrops();
+      console.log("Found crop IDs:", cropIds);
+      
+      if (!cropIds || cropIds.length === 0) {
+        console.log("No crops available");
+        setAvailableCrops([]);
+        setLoading(false);
+        return;
+      }
+      
+      const cropsDetails = await Promise.all(
+        cropIds.map(async (id) => {
+          try {
+            const crop = await getCrop(id);
+            console.log(`Crop ${id}:`, crop);
+            return { id, ...crop };
+          } catch (e) {
+            console.error(`Error loading crop ${id}:`, e);
+            return null;
+          }
+        })
+      );
+      
+      const validCrops = cropsDetails.filter(c => c !== null);
+      console.log("✅ Loaded crops:", validCrops);
+      setAvailableCrops(validCrops);
+    } catch (error) {
+      console.error("❌ Error loading available crops:", error);
+      console.error("Full error:", error);
+      setAvailableCrops([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-6">
@@ -160,6 +285,20 @@ const Marketplace = () => {
                 </svg> Buy Crops
               </div>
             </button>
+            <button
+              onClick={() => setSection("profile")}
+              className={`flex-1 py-4 font-medium text-center transition-all duration-300 ${
+                section === "profile"
+                  ? "text-gray-900 border-b-2 border-black bg-gray-50"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex justify-center items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg> Profile
+              </div>
+            </button>
           </div>
 
           <div className="p-6">
@@ -189,7 +328,7 @@ const Marketplace = () => {
                   <div>
                     <input
                       type="number"
-                      placeholder="Quantity"
+                      placeholder="Quantity (kg)"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-gray-200"
@@ -260,9 +399,48 @@ const Marketplace = () => {
               >
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center">
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg> Buy a Crop
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg> Available Crops
                 </h2>
+                
+                {/* Show all available crops */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {loading && (
+                    <div className="col-span-2 text-center py-8">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading crops...</p>
+                    </div>
+                  )}
+                  
+                  {!loading && availableCrops.length === 0 && (
+                    <div className="col-span-2 text-center py-8 bg-gray-50 rounded-lg">
+                      <p className="text-gray-600">No crops available yet. Be the first to list!</p>
+                    </div>
+                  )}
+                  
+                  {!loading && availableCrops.map((crop) => (
+                    <div key={crop.id} className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-black transition-all cursor-pointer"
+                         onClick={() => {
+                           setCropId(crop.id);
+                           handleFetchCrop();
+                         }}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg text-gray-900">{crop[2] || 'Unknown Crop'}</h3>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                          Available
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p><strong>Quantity:</strong> {crop[3]?.toString()} kg</p>
+                        <p><strong>Price:</strong> {crop[4]?.toString()} wei</p>
+                        <p className="text-xs text-gray-400">ID: #{crop.id?.toString()}</p>
+                      </div>
+                      <button className="mt-3 w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition-all">
+                        View Details
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 
                 <div className="space-y-4">
                   <div className="flex space-x-3">
@@ -370,6 +548,75 @@ const Marketplace = () => {
                       </div>
                     )}
                   </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {/* Profile Section */}
+            {section === "profile" && (
+              <div 
+                id="profile-section"
+                className="space-y-6"
+              >
+                <div className="bg-gradient-to-r from-gray-900 to-black text-white p-4 rounded-lg">
+                  <h2 className="text-xl font-bold flex items-center mb-2">
+                    <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg> My Profile
+                  </h2>
+                  <p className="text-sm text-gray-300 truncate">Wallet: {walletAddress || "Not Connected"}</p>
+                </div>
+
+                {/* My Listings */}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg> My Listed Crops ({myListings.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myListings.length === 0 ? (
+                      <p className="text-gray-500 col-span-2">No crops listed yet.</p>
+                    ) : (
+                      myListings.map((crop) => (
+                        <div key={crop.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-gray-900">{crop[2]}</h4>
+                            <span className={`px-2 py-1 text-xs rounded ${crop[5] ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                              {crop[5] ? 'Sold' : 'Available'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">Quantity: {crop[3]?.toString()}</p>
+                          <p className="text-sm text-gray-600">Price: {crop[4]?.toString()} wei</p>
+                          <p className="text-xs text-gray-400 mt-2">ID: #{crop.id?.toString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* My Purchases */}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg> My Purchases ({myPurchases.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myPurchases.length === 0 ? (
+                      <p className="text-gray-500 col-span-2">No purchases yet.</p>
+                    ) : (
+                      myPurchases.map((crop) => (
+                        <div key={crop.id} className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                          <h4 className="font-bold text-gray-900 mb-2">{crop[2]}</h4>
+                          <p className="text-sm text-gray-600">Quantity: {crop[3]?.toString()}</p>
+                          <p className="text-sm text-gray-600">Paid: {crop[4]?.toString()} wei</p>
+                          <p className="text-xs text-gray-400 mt-2">Seller: {crop[1]?.substring(0, 10)}...</p>
+                          <p className="text-xs text-gray-400">ID: #{crop.id?.toString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
