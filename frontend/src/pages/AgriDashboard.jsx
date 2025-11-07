@@ -57,12 +57,7 @@ const AgriDashboard = () => {
   }, []);
   
   const handleCardClick = (cardId) => {
-    // Check if wallet is connected before navigation
-    if (!isConnected) {
-      setShowWalletModal(true);
-      return;
-    }
-    
+    // Allow navigation without wallet check - wallet only needed for Marketplace
     switch(cardId) {
         case 1: 
         navigate('/market-predection');
