@@ -1,8 +1,6 @@
-'use client';
-
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { ENDPOINTS } from "../config/api";
 
 const PlantDiseaseDetection = () => {
@@ -27,7 +25,7 @@ const PlantDiseaseDetection = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsLoaded(true);
