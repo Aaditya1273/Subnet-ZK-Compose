@@ -276,15 +276,16 @@ const PlantDiseaseDetection = () => {
         // Fallback to Gemini AI
         const geminiResult = await analyzePlantDisease(selectedImage);
         
-        // Format result to match backend response
+        // Format result to match backend response structure
         const formattedResult = {
           status: "success",
-          prediction: geminiResult.disease_name,
-          confidence: geminiResult.confidence,
-          description: geminiResult.description,
-          treatment: geminiResult.treatment,
-          prevention: geminiResult.prevention,
-          source: "Gemini AI (Fallback)"
+          prediction: {
+            disease: geminiResult.disease_name,
+            user_friendly_report: `Disease: ${geminiResult.disease_name}\n\nDescription:\n${geminiResult.description}\n\nTreatment:\n${geminiResult.treatment}\n\nPrevention:\n${geminiResult.prevention}`
+          },
+          confidence: geminiResult.confidence / 100, // Convert to 0-1 range
+          class: geminiResult.disease_name,
+          source: "Gemini AI"
         };
         
         setDetectionResult(formattedResult);
