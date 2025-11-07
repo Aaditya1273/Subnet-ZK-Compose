@@ -25,7 +25,7 @@ const HeroSection = () => {
     <section 
       className="relative min-h-screen bg-cover bg-center overflow-hidden"
       style={{
-        backgroundImage: "url('/farm.avif')",
+        backgroundImage: "url('https://github.com/user-attachments/assets/579c93e2-6679-40cb-b138-f69aba8f8bde')",
         backgroundPosition: `center ${scrollPosition * 0.5}px`
       }}
     >
