@@ -1,7 +1,5 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 
 const AgriDashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -11,7 +9,7 @@ const AgriDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   
   useEffect(() => {
     setIsLoaded(true);
@@ -67,22 +65,22 @@ const AgriDashboard = () => {
     
     switch(cardId) {
         case 1: 
-        router.push('/market-predection');
+        navigate('/market-predection');
         break;
       case 2: 
-        router.push('/disease-detection');
+        navigate('/disease-detection');
         break;
       case 3: 
-        router.push('/weather-predection');
+        navigate('/weather-predection');
         break;
       case 4: 
-        router.push('/SoilPredictor');
+        navigate('/SoilPredictor');
         break;
       case 5: 
-        router.push('/StorageForm');
+        navigate('/StorageForm');
         break;
       case 6: 
-        router.push('/Marketplace');
+        navigate('/Marketplace');
         break;
         default:
         setActiveCard(cardId);

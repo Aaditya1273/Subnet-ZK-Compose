@@ -1,10 +1,8 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, pageName }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -43,7 +41,7 @@ const ProtectedRoute = ({ children, pageName }) => {
   }, []);
 
   const handleGoHome = () => {
-    router.push('/');
+    navigate('/');
   };
 
   if (isChecking) {
