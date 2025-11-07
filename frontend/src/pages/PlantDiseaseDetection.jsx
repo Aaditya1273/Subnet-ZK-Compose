@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { ENDPOINTS } from "../config/api";
+import { analyzePlantDisease } from "../services/geminiService";
 
 const PlantDiseaseDetection = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -249,12 +250,14 @@ const PlantDiseaseDetection = () => {
     setIsAnalyzing(true);
     setDetectionResult("");
 
-    const formData = new FormData();
-    formData.append("file", selectedImage);
-
     try {
+      // Try backend first
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+
       const response = await axios.post(ENDPOINTS.PREDICT_DISEASE, formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 10000 // 10 second timeout
       });
 
       console.log("Detection result:", response.data);
@@ -264,8 +267,32 @@ const PlantDiseaseDetection = () => {
       if (response.data?.status === "success" || response.data?.prediction) {
         setShowReportModal(true);
       }
-    } catch (error) {
-      setDetectionResult({ error: "Error analyzing image" });
+    } catch (backendError) {
+      console.log("Backend unavailable, using Gemini AI fallback...");
+      
+      try {
+        // Fallback to Gemini AI
+        const geminiResult = await analyzePlantDisease(selectedImage);
+        
+        // Format result to match backend response
+        const formattedResult = {
+          status: "success",
+          prediction: geminiResult.disease_name,
+          confidence: geminiResult.confidence,
+          description: geminiResult.description,
+          treatment: geminiResult.treatment,
+          prevention: geminiResult.prevention,
+          source: "Gemini AI (Fallback)"
+        };
+        
+        setDetectionResult(formattedResult);
+        setShowReportModal(true);
+      } catch (geminiError) {
+        console.error("Gemini fallback failed:", geminiError);
+        setDetectionResult({ 
+          error: "Analysis failed. Please check your internet connection and try again." 
+        });
+      }
     } finally {
       setIsAnalyzing(false);
     }
