@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 export const analyzePlantDisease = async (imageFile) => {
   try {
@@ -60,6 +60,7 @@ Format your response as JSON with these exact fields: disease_name, confidence, 
 
     // Parse Gemini response
     const text = response.data.candidates[0].content.parts[0].text;
+    console.log('📝 Gemini text response:', text);
     
     // Try to extract JSON from the response
     let result;
@@ -68,15 +69,18 @@ Format your response as JSON with these exact fields: disease_name, confidence, 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
+        console.log('✅ Parsed JSON result:', result);
       } else {
         // Fallback: parse text manually
+        console.log('⚠️ No JSON found, parsing text manually');
         result = parseTextResponse(text);
       }
     } catch (e) {
+      console.log('⚠️ JSON parse failed, using text parser:', e);
       result = parseTextResponse(text);
     }
 
-    return {
+    const finalResult = {
       success: true,
       disease_name: result.disease_name || 'Unknown',
       confidence: result.confidence || 85,
@@ -85,6 +89,9 @@ Format your response as JSON with these exact fields: disease_name, confidence, 
       prevention: result.prevention || 'Maintain good plant hygiene',
       source: 'Gemini AI'
     };
+    
+    console.log('🎯 Final result to display:', finalResult);
+    return finalResult;
 
   } catch (error) {
     console.error('❌ Gemini API Error:', error);
