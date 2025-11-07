@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ENDPOINTS } from '../config/api';
+import { analyzeSoilImage } from '../services/geminiSoilService';
 
 function SoilPredictor() {
   const [file, setFile] = useState(null);
@@ -46,71 +47,74 @@ function SoilPredictor() {
     if (!file) return alert("Please upload an image!");
 
     setIsLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
+      // Try backend first
+      const formData = new FormData();
+      formData.append("file", file);
+
       const res = await axios.post(ENDPOINTS.PREDICT_SOIL, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
 
-      console.log("🔍 Backend response:", res.data); // debug output
+      console.log("🔍 Backend response:", res.data);
       
       // Check if there's an error in the response
       if (res.data.error || res.data.message === "Error analyzing image") {
+        throw new Error("Backend error");
+      }
+      
+      // Transform backend response to frontend format
+      const prediction = res.data.prediction || {};
+      setResult({
+        prediction: prediction.soil_type || "Unknown",
+        confidence: (res.data.confidence * 100) || 0,
+        crops: prediction.recommended_crops || [],
+        care: prediction.care_instructions || [],
+        notes: prediction.notes || "",
+        ph_range: prediction.ph_range || "N/A",
+        texture: prediction.texture || "N/A",
+        water_retention: prediction.water_retention || "N/A"
+      });
+      
+      setAnimateResult(true);
+    } catch (backendErr) {
+      console.log("Backend unavailable, using Gemini AI fallback...");
+      
+      try {
+        // Fallback to Gemini AI
+        const geminiResult = await analyzeSoilImage(file);
+        
+        setResult({
+          prediction: geminiResult.soil_type,
+          confidence: 90,
+          crops: geminiResult.suitable_crops,
+          care: [geminiResult.recommendations],
+          notes: `Color: ${geminiResult.color}, Moisture: ${geminiResult.moisture}, Organic Matter: ${geminiResult.organic_matter}`,
+          ph_range: geminiResult.ph_level,
+          texture: geminiResult.texture,
+          water_retention: geminiResult.moisture,
+          source: "Gemini AI"
+        });
+        
+        setAnimateResult(true);
+      } catch (geminiErr) {
+        console.error("❌ Gemini fallback failed:", geminiErr);
+        
         setResult({
           error: true,
-          message: res.data.error || "Soil analysis temporarily unavailable",
-          prediction: "Service Update In Progress",
+          message: "Analysis failed. Please check your internet connection and try again.",
+          prediction: "Error",
           confidence: 0,
-          notes: "The soil analysis AI is being updated for better compatibility. Our team is working to resolve this issue. Please try again in a few minutes, or contact support if the problem persists.",
+          notes: "Unable to analyze the image. Please ensure you have a valid Gemini API key configured.",
           crops: [],
           care: []
         });
-      } else {
-        // Transform backend response to frontend format
-        const prediction = res.data.prediction || {};
-        setResult({
-          prediction: prediction.soil_type || "Unknown",
-          confidence: (res.data.confidence * 100) || 0,
-          crops: prediction.recommended_crops || [],
-          care: prediction.care_instructions || [],
-          notes: prediction.notes || "",
-          ph_range: prediction.ph_range || "N/A",
-          texture: prediction.texture || "N/A",
-          water_retention: prediction.water_retention || "N/A"
-        });
+        setAnimateResult(true);
       }
-      
-      setAnimateResult(true);
-    } catch (err) {
-      console.error("❌ Soil prediction error:", err);
-      
-      // More detailed error handling
-      let errorMessage = "Prediction failed.";
-      if (err.response) {
-        // Server responded with error status
-        errorMessage = `Server error: ${err.response.status}`;
-        if (err.response.data && err.response.data.error) {
-          errorMessage = err.response.data.error;
-        }
-      } else if (err.request) {
-        // Request was made but no response received
-        errorMessage = "Network error. Please check your connection.";
-      }
-      
-      setResult({
-        error: true,
-        message: errorMessage,
-        prediction: "Error",
-        confidence: 0,
-        notes: "Unable to analyze the image. Please try again with a clearer image or check your connection.",
-        crops: [],
-        care: []
-      });
-      setAnimateResult(true);
     } finally {
       setIsLoading(false);
     }

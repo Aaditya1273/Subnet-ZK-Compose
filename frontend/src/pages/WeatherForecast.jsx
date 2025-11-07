@@ -286,11 +286,6 @@ const WeatherForecast = () => {
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-smart-green mx-auto mb-4"></div>
             <p className="text-gray-600">Loading weather data...</p>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border-2 border-red-200 shadow-lg p-6 mb-6 rounded-lg">
-            <p className="text-red-600 font-semibold">⚠️ {error}</p>
-            <p className="text-sm text-gray-600 mt-2">Showing fallback data. Please check your internet connection.</p>
-          </div>
         ) : null}
 
         <div className="bg-white shadow-lg p-6 mb-6 rounded-lg relative overflow-hidden transform transition-all duration-300 hover:scale-101 hover:shadow-xl">

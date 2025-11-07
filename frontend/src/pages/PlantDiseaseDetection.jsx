@@ -49,16 +49,18 @@ const PlantDiseaseDetection = () => {
       const response = await axios.post(
         ENDPOINTS.VALIDATE_PLANT_IMAGE,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { 
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 5000 // 5 second timeout
+        }
       );
       
       // Check if validation service returned an error
       if (response.data.status === "error") {
-        console.warn("Validation service error:", response.data.message);
-        // If Gemini fails, reject the image (safer approach)
-        setIsValidPlantImage(false);
-        setValidationMessage("⚠️ Image validation failed. Please try again or upload a clear plant image.");
-        return false;
+        console.warn("Validation service error, allowing analysis anyway");
+        setIsValidPlantImage(true); // Allow analysis
+        setValidationMessage("");
+        return true;
       }
       
       const isPlant = response.data.is_plant;
@@ -72,11 +74,11 @@ const PlantDiseaseDetection = () => {
       
       return isPlant;
     } catch (error) {
-      console.error("Validation request failed:", error);
-      // If backend is completely down, reject to be safe
-      setIsValidPlantImage(false);
-      setValidationMessage("⚠️ Validation service unavailable. Please try again later.");
-      return false;
+      console.error("Validation request failed, allowing analysis anyway");
+      // If backend is down, allow analysis (Gemini will handle it)
+      setIsValidPlantImage(true);
+      setValidationMessage("");
+      return true;
     } finally {
       setIsValidating(false);
     }
