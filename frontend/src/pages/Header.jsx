@@ -1,9 +1,5 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import ConnectWallet from '../components/ConnectWallet';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -11,7 +7,8 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   
   useEffect(() => {
     const handleScroll = () => {
@@ -194,10 +191,6 @@ const Header = () => {
               </li>
             ))}
           </ul>
-          
-          <div className="flex items-center">
-            <ConnectWallet />
-          </div>
         </nav>
       </div>
     
@@ -227,9 +220,6 @@ const Header = () => {
               </a>
             </li>
           ))}
-          <li className="mt-4 px-4 pb-4">
-            <ConnectWallet className="w-full" />
-          </li>
         </ul>
       </div>
     </header>
