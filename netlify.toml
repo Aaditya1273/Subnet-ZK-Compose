@@ -11,3 +11,8 @@
 [build.environment]
   NODE_VERSION = "20"
   CI = "false"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    disable = true
