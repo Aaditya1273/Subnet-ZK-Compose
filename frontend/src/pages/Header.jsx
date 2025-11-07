@@ -64,16 +64,12 @@ const Header = () => {
   ];
   
   const handleNavClick = (e, item) => {
-    // Allow Home page navigation always
-    if (item.path === '/') {
-      return;
-    }
-    
-    // Check if wallet is connected for other pages
-    if (!isConnected) {
+    // Only require wallet for Marketplace
+    if (item.path === '/marketplace' && !isConnected) {
       e.preventDefault();
       setShowWalletModal(true);
     }
+    // All other pages (oracles) are accessible without wallet
   };
   
   return (
