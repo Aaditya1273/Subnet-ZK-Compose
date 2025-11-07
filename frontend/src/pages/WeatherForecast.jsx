@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Cloud, Sun, Sunrise, Sunset, Moon, Wind, Droplets, ThermometerSun, Umbrella, CloudRain, CloudLightning, CloudSnow, MapPin } from 'lucide-react';
 import axios from 'axios';

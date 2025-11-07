@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { testApiConnection, quickHealthCheck } from '../config/apiTest';
 import { API_URL, ENDPOINTS } from '../config/api';

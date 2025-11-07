@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown, TrendingUp, ArrowRight, Search, Calendar, Download, Filter, AlertTriangle, Zap, Info } from 'lucide-react';
 import axios from 'axios';
