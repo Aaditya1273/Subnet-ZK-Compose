@@ -12,8 +12,14 @@ import StorageForm from "./components/StorageForm";
 import Marketplace from "./components/Marketplace"; 
 import SoilPredictor from './pages/SoilPredictor';
 import ApiTestPage from './pages/ApiTestPage';
-import WalletProvider from './components/WalletProvider';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+// Simple Web3 Context for wallet connection (no RainbowKit)
+import { createContext, useContext } from 'react';
+
+export const Web3Context = createContext(null);
+
+export const useWeb3 = () => useContext(Web3Context);
 
 function App() {
   const [loaded, setLoaded] = useState(false);
@@ -54,7 +60,7 @@ function App() {
   }, []);
 
   return (
-    <WalletProvider>
+    <Web3Context.Provider value={{}}>
       <Router>
         <div className={`App ${loaded ? 'app-loaded' : ''}`}>
           <div className="header-container">
@@ -88,7 +94,7 @@ function App() {
           </Routes>
         </div>
       </Router>
-    </WalletProvider>
+    </Web3Context.Provider>
   );
 }
 
