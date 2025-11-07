@@ -1,6 +1,6 @@
 {
   "name": "farmoracle-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "FarmOracle - Africa's Autonomous AI Farming Oracle on the Blockchain",
   "private": true,
   "engines": {
