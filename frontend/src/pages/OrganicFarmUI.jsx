@@ -50,7 +50,7 @@ const OrganicFarmUI = () => {
               onMouseLeave={() => setIsHovering(false)}
             >
               <img 
-                src="/farms.avif" 
+                src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop" 
                 alt="Farmers in corn field at sunset"
                 className={`w-full h-auto transition-all duration-700 ${isHovering ? 'scale-110' : 'scale-100'}`}
               />

@@ -4,7 +4,7 @@ const AgriNewsSection = () => {
   const articles = [
     {
       id: 1,
-      image: "/news1.jpg", 
+      image: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop", 
       date: "7 Nov 2025",
       author: "Nebula Sydnee",
       comments: 2,
@@ -13,7 +13,7 @@ const AgriNewsSection = () => {
     },
     {
       id: 2,
-      image: "/news2.webp", 
+      image: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=300&fit=crop", 
       date: "8 Nov 2025",
       author: "Kevin Yarks",
       comments: 3,
@@ -22,7 +22,7 @@ const AgriNewsSection = () => {
     },
     {
       id: 3,
-      image: "/news3.jpg", 
+      image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&h=300&fit=crop", 
       date: "11 Nov 2025",
       author: "Peter Stark",
       comments: 1,
