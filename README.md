@@ -1,7 +1,7 @@
 # 🌍 FarmOracle: Africa's Autonomous AI Farming Oracle on the Blockchain
 
 
-**"Empowering African farmers with AI-driven insights and blockchain-backed transparency"**
+**"Empowering African farmers with AI-driven insights and blockchain-backed transparency..."**
 
 Welcome to **FarmOracle**, Africa's first comprehensive smart agriculture platform that combines **Computer Vision**, **Predictive Analytics**, and **Decentralized Crop Trading** — all optimized for low-resource environments and built for the **Africa Blockchain Festival 2025**.
 
