@@ -3,7 +3,7 @@
 
 **"Empowering African farmers with AI-driven insights and blockchain-backed transparency"**
 
-Welcome to **FarmOracle**, Africa's first comprehensive smart agriculture platform that combines **Computer Vision**, **Predictive Analytics**, and **Decentralized Crop Trading** — all optimized for low-resource environments and built for the **Africa Blockchain Festival 2025...**.
+Welcome to **FarmOracle**, Africa's first comprehensive smart agriculture platform that combines **Computer Vision**, **Predictive Analytics**, and **Decentralized Crop Trading** — all optimized for low-resource environments and built for the **Africa Blockchain Festival 2025.**.
 
 🏆 **Built for Africa Blockchain Festival 2025** - Demonstrating the synergy between AI innovation and blockchain trust in agriculture.
 
