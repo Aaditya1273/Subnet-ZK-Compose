@@ -22,10 +22,10 @@ import typing
 import bittensor as bt
 
 # Bittensor Miner Template:
-import template
+import zk_compose
 
 # import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
+from zk_compose.base.miner import BaseMinerNeuron
 
 
 class Miner(BaseMinerNeuron):
@@ -43,15 +43,15 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
-        self, synapse: template.protocol.ZKCompose
-    ) -> template.protocol.ZKCompose:
+        self, synapse: zk_compose.protocol.ZKCompose
+    ) -> zk_compose.protocol.ZKCompose:
         """
         Processes the 'ZKCompose' synapse by performing recursive aggregation on base_proofs.
         """
         bt.logging.info(f"Received {len(synapse.base_proofs)} proofs for aggregation at depth {synapse.recursion_depth}")
         
         try:
-            from template.folding_logic import aggregate_proofs
+            from zk_compose.folding_logic import aggregate_proofs
             
             # Execute recursive aggregation
             proof, p_time, ratio = aggregate_proofs(
@@ -73,7 +73,7 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: zk_compose.protocol.ZKCompose
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -136,7 +136,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: zk_compose.protocol.ZKCompose) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
