@@ -54,6 +54,12 @@ class ZKCompose(bt.Synapse):
 
     # Required request input: List of base proofs to aggregate.
     base_proofs: typing.List[str]
+    
+    # Metadata identifying which subnets the base proofs originated from.
+    base_subnet_ids: typing.Optional[typing.List[int]] = None
+
+    # Architecture of the base proofs (e.g., "plonk_dsperse", "halo2").
+    base_proof_type: str = "plonk_dsperse"
 
     # Optional recursion parameters.
     recursion_depth: int = 1

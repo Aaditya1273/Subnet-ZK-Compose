@@ -24,10 +24,10 @@ import time
 import bittensor as bt
 
 # import base validator class which takes care of most of the boilerplate
-from template.base.validator import BaseValidatorNeuron
+from zk_compose.base.validator import BaseValidatorNeuron
 
 # Bittensor Validator Template:
-from template.validator import forward
+from zk_compose.validator import forward
 
 
 class Validator(BaseValidatorNeuron):

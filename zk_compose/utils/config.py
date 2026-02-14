@@ -158,14 +158,14 @@ def add_miner_args(cls, parser):
     parser.add_argument(
         "--wandb.project_name",
         type=str,
-        default="template-miners",
+        default="zk-compose-miners",
         help="Wandb project to log to.",
     )
 
     parser.add_argument(
         "--wandb.entity",
         type=str,
-        default="opentensor-dev",
+        default="zk-compose-dev",
         help="Wandb entity to log to.",
     )
 
@@ -236,14 +236,14 @@ def add_validator_args(cls, parser):
         "--wandb.project_name",
         type=str,
         help="The name of the project where you are sending the new run.",
-        default="template-validators",
+        default="zk-compose-validators",
     )
 
     parser.add_argument(
         "--wandb.entity",
         type=str,
         help="The name of the project where you are sending the new run.",
-        default="opentensor-dev",
+        default="zk-compose-dev",
     )
 
 

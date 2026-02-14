@@ -33,35 +33,43 @@ def reward(query: Dict[str, Any], response: Dict[str, Any]) -> float:
 
     base_proofs = query["base_proofs"]
     expected_depth = query["depth"]
+    base_subnet_ids = query.get("base_subnet_ids", [])
+    unique_subnets = len(set(base_subnet_ids)) if base_subnet_ids else 1
     
     proof = response["aggregated_proof"]
     ratio = response.get("compression_ratio", 1.0)
     
-    # 1. Basic Validity Check (Simulated mathematical verification)
-    # The proof string should contain the depth and a hash of the original content.
-    combined_content = "".join(base_proofs)
-    expected_hash = hashlib.sha256(combined_content.encode()).hexdigest()
+    from zk_compose.zk_logic.zk_engine import ZKEngine
     
-    is_valid = (
-        proof.startswith(f"zk-recursive-v1-{expected_depth}-") and 
-        proof.endswith(expected_hash)
+    # 1. Real Mathematical Verification
+    is_valid, message = ZKEngine.verify_composition(
+        proof, 
+        base_proofs, 
+        base_subnet_ids, 
+        expected_depth
     )
     
     if not is_valid:
-        bt.logging.warning(f"Invalid proof signature received: {proof}")
+        bt.logging.warning(f"Proof verification failed: {message}")
         return 0.0
 
-    # 2. Scoring with Multipliers
-    # Base reward for validity
+    # 2. Incentive Design Multipliers (from idea.md)
     score = 1.0
     
-    # Bonus for succinctness (compression ratio)
-    if ratio > 1.2:
-        score *= min(ratio, 5.0) # Cap succinctness bonus at 5x
+    # Recursion Depth Multiplier: 1.5x–5x for depth >= 2
+    if expected_depth == 2:
+        score *= 1.5
+    elif expected_depth > 2:
+        # Linear scaling from 2.0x to 5.0x for depth 3 to 10+
+        score *= min(2.0 + (expected_depth - 3) * 0.5, 5.0)
         
-    # Bonus for recursion depth
-    if expected_depth > 1:
-        score *= (1.5 ** (expected_depth - 1))
+    # Succinctness Bonus: Extra for >50% compression (ratio > 2.0)
+    if ratio > 2.0:
+        score *= 1.5 # 50% bonus for high succinctness
+        
+    # Cross-Subnet Premium: 2x if proofs from >= 2 different subnets
+    if unique_subnets >= 2:
+        score *= 2.0
 
     return score
 

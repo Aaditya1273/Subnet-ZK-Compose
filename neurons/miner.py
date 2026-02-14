@@ -56,6 +56,7 @@ class Miner(BaseMinerNeuron):
             # Execute recursive aggregation
             proof, p_time, ratio = aggregate_proofs(
                 synapse.base_proofs, 
+                base_subnet_ids=synapse.base_subnet_ids,
                 depth=synapse.recursion_depth
             )
             
