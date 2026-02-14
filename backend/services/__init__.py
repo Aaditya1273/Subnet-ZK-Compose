@@ -1,3 +1,0 @@
-"""
-FarmOracle Services Package
-"""
