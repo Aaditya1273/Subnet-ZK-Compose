@@ -40,6 +40,17 @@ import bittensor as bt
 #   assert dummy_output == 2
 
 
+from pydantic import BaseModel
+
+class ProofMetadata(BaseModel):
+    """
+    Structured metadata for component proofs.
+    """
+    subnet_id: int
+    proof_system: str  # "groth16", "plonk", "halo2", "nova"
+    vk_hash: str       # Linked to VKRegistry
+    public_inputs: typing.List[str]
+
 class ZKCompose(bt.Synapse):
     """
     The ZKCompose protocol handles recursive ZK proof aggregation between validators and miners.
@@ -52,10 +63,15 @@ class ZKCompose(bt.Synapse):
     - compression_ratio: The ratio of (input size / output size), calculated after proof generation.
     """
 
-    # Required request input: List of base proofs to aggregate.
-    base_proofs: typing.List[str]
-    
+    # Component proofs to be aggregated. Supports both str (simulated) 
+    # and bytes (production SN2/Arkworks format).
+    base_proofs: typing.List[typing.Union[str, bytes]]
+
+    # Optional metadata for each component proof.
+    proof_metadata: typing.Optional[typing.List[ProofMetadata]] = None
+
     # Metadata identifying which subnets the base proofs originated from.
+    # [Deprecated]: Metadata now handled by proof_metadata.
     base_subnet_ids: typing.Optional[typing.List[int]] = None
 
     # Architecture of the base proofs (e.g., "plonk_dsperse", "halo2").
@@ -64,10 +80,11 @@ class ZKCompose(bt.Synapse):
     # Optional recursion parameters.
     recursion_depth: int = 1
     
-    # Optional request output: The succinct aggregated proof.
-    aggregated_proof: typing.Optional[str] = None
+    # OUTPUTS:
+    # The final succinct recursive proof.
+    aggregated_proof: typing.Optional[typing.Union[str, bytes]] = None
     
-    # Performance and verification metadata returned by the miner.
+    # Performance and quality metrics.
     compression_ratio: typing.Optional[float] = None
     proving_time: typing.Optional[float] = None
 
