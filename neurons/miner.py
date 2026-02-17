@@ -46,30 +46,36 @@ class Miner(BaseMinerNeuron):
         self, synapse: zk_compose.protocol.ZKCompose
     ) -> zk_compose.protocol.ZKCompose:
         """
-        Processes the 'ZKCompose' synapse by performing recursive aggregation on base_proofs.
+        Processes the 'ZKCompose' synapse by performing production-grade recursive ZK aggregation.
         """
-        bt.logging.info(f"Received {len(synapse.base_proofs)} proofs for aggregation at depth {synapse.recursion_depth}")
+        from zk_compose.zk_logic.zk_engine import ZKEngine
+        
+        bt.logging.info(f"Received {len(synapse.base_proofs)} proofs for aggregation. Depth={synapse.recursion_depth}")
         
         try:
-            from zk_compose.folding_logic import aggregate_proofs
-            
-            # Execute recursive aggregation
-            proof, p_time, ratio = aggregate_proofs(
-                synapse.base_proofs, 
-                base_subnet_ids=synapse.base_subnet_ids,
+            # Execute native recursive proving (O(n * depth) complexity)
+            aggregated_proof, proving_time = ZKEngine.prove_composition(
+                base_proofs=synapse.base_proofs,
+                base_subnet_ids=synapse.base_subnet_ids or [1] * len(synapse.base_proofs),
                 depth=synapse.recursion_depth
             )
             
-            # Fill the synapse with results
-            synapse.aggregated_proof = proof
-            synapse.proving_time = p_time
-            synapse.compression_ratio = ratio
+            # Calculate succinctness metrics
+            input_size = sum(len(p) if isinstance(p, bytes) else len(p.encode()) for p in synapse.base_proofs)
+            output_size = len(aggregated_proof)
+            compression_ratio = input_size / output_size if output_size > 0 else 1.0
             
-            bt.logging.success(f"Successfully generated recursive proof in {p_time:.2f}s (Ratio: {ratio:.2f}x)")
+            # Fill the synapse with production results
+            synapse.aggregated_proof = aggregated_proof
+            synapse.proving_time = proving_time
+            synapse.compression_ratio = compression_ratio
+            
+            bt.logging.success(f"Generated recursive proof. Ratio: {compression_ratio:.2f}x, Time: {proving_time:.2f}s")
             
         except Exception as e:
-            bt.logging.error(f"Error in ZK aggregation: {e}")
-            synapse.aggregated_proof = "error"
+            bt.logging.error(f"Error in production ZK aggregation: {e}")
+            # Ensure we return a informative response even on failure
+            synapse.aggregated_proof = b"error" if isinstance(synapse.base_proofs[0], bytes) else "error"
             
         return synapse
 

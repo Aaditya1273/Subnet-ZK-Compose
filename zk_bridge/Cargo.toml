@@ -16,7 +16,14 @@ ark-groth16 = "0.4.0"
 ark-serialize = "0.4.0"
 ark-ff = "0.4.0"
 ark-relations = "0.4.0"
-nova-snark = "0.2.0"
+nova-snark = "0.2"
+
+# Force update for problematic dependencies
+bitvec = "1.0.1"
+funty = "2.0.0"
+
+[patch.crates-io]
+funty = { git = "https://github.com/myrrlyn/funty", branch = "master" }
 
 # Utilities
 serde = { version = "1.0", features = ["derive"] }
