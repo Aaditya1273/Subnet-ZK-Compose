@@ -26,22 +26,22 @@ from typing import Dict, Any
 
 def reward(query: Dict[str, Any], response: Dict[str, Any]) -> float:
     """
-    Reward the miner based on proof validity, succinctness, and depth.
+    Reward the miner response based on cryptographic validity and aggregation quality.
     """
+    from zk_compose.zk_logic.zk_engine import ZKEngine
+    
     if response is None or response.get("aggregated_proof") is None:
         return 0.0
 
-    base_proofs = query["base_proofs"]
-    expected_depth = query["depth"]
+    # 1. Extraction of inputs for Native Verification
+    base_proofs = query.get("base_proofs", [])
+    expected_depth = query.get("depth", 1)
     base_subnet_ids = query.get("base_subnet_ids", [])
-    unique_subnets = len(set(base_subnet_ids)) if base_subnet_ids else 1
-    
-    proof = response["aggregated_proof"]
+    proof = response.get("aggregated_proof")
     ratio = response.get("compression_ratio", 1.0)
-    
-    from zk_compose.zk_logic.zk_engine import ZKEngine
-    
-    # 1. Real Mathematical Verification
+
+    # 2. Native Cryptographic Verification (O(1) Constant Time)
+    # This replaces simulation logic with high-fidelity native verifier calls.
     is_valid, message = ZKEngine.verify_composition(
         proof, 
         base_proofs, 
@@ -50,27 +50,28 @@ def reward(query: Dict[str, Any], response: Dict[str, Any]) -> float:
     )
     
     if not is_valid:
-        bt.logging.warning(f"Proof verification failed: {message}")
+        bt.logging.warning(f"Production verification failed: {message}")
         return 0.0
 
-    # 2. Incentive Design Multipliers (from idea.md)
+    # 3. Incentive Multipliers (Stacking)
     score = 1.0
     
-    # Recursion Depth Multiplier: 1.5x–5x for depth >= 2
+    # Recursion Depth Multiplier (1.5x–5x)
     if expected_depth == 2:
         score *= 1.5
     elif expected_depth > 2:
-        # Linear scaling from 2.0x to 5.0x for depth 3 to 10+
         score *= min(2.0 + (expected_depth - 3) * 0.5, 5.0)
         
-    # Succinctness Bonus: Extra for >50% compression (ratio > 2.0)
+    # Succinctness Bonus (Ratio > 2.0)
     if ratio > 2.0:
-        score *= 1.5 # 50% bonus for high succinctness
+        score *= 1.5 
         
-    # Cross-Subnet Premium: 2x if proofs from >= 2 different subnets
+    # Cross-Subnet Premium (Multi-Subnet composition)
+    unique_subnets = len(set(base_subnet_ids)) if base_subnet_ids else 1
     if unique_subnets >= 2:
         score *= 2.0
 
+    bt.logging.info(f"Proof Verified. Final Reward: {score} | Depth: {expected_depth} | Ratio: {ratio:.2f}x | Subnets: {unique_subnets}")
     return score
 
 
